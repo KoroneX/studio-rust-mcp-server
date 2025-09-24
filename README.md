@@ -17,6 +17,8 @@ subject to their respective terms and conditions.
 
 The setup process also contains a short plugin installation and Claude Desktop configuration script.
 
+<img width="1919" height="1031" alt="image" src="https://github.com/user-attachments/assets/39334046-1bd6-4da5-b82d-26e86a09da09" />
+
 ## Setup
 
 ### Install with release binaries
