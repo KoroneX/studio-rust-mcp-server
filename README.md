@@ -1,7 +1,7 @@
-# Roblox Studio MCP Server
+# Korone Studio MCP Server
 
 This repository contains a reference implementation of the Model Context Protocol (MCP) that enables
-communication between Roblox Studio via a plugin and [Claude Desktop](https://claude.ai/download) or [Cursor](https://www.cursor.com/).
+communication between Korone Studio via a plugin and [Claude Desktop](https://claude.ai/download) or [Cursor](https://www.cursor.com/).
 It consists of the following Rust-based components, which communicate through internal shared
 objects.
 
@@ -15,8 +15,6 @@ response. It will cause responses to be sent to the Claude app.
 and read the contents of your opened place. Third-party data handling and privacy practices are
 subject to their respective terms and conditions.
 
-![Scheme](MCP-Server.png)
-
 The setup process also contains a short plugin installation and Claude Desktop configuration script.
 
 ## Setup
@@ -27,14 +25,14 @@ This MCP Server supports pretty much any MCP Client but will automatically set u
 
 To set up automatically:
 
-1. Ensure you have [Roblox Studio](https://create.roblox.com/docs/en-us/studio/setup),
+1. Ensure you have [Korone Studio](https://create.Korone.com/docs/en-us/studio/setup),
    and [Claude Desktop](https://claude.ai/download)/[Cursor](https://www.cursor.com/) installed and started at least once.
-1. Exit MCP Clients and Roblox Studio if they are running.
+1. Exit MCP Clients and Korone Studio if they are running.
 1. Download and run the installer:
-   1. Go to the [releases](https://github.com/Roblox/studio-rust-mcp-server/releases) page and
+   1. Go to the [releases](https://github.com/Korone/studio-rust-mcp-server/releases) page and
       download the latest release for your platform.
    1. Unzip the downloaded file if necessary and run the installer.
-   1. Restart Claude/Cursor and Roblox Studio if they are running.
+   1. Restart Claude/Cursor and Korone Studio if they are running.
 
 ### Setting up manually
 
@@ -43,7 +41,7 @@ To set up manually add following to your MCP Client config:
 ```json
 {
   "mcpServers": {
-    "Roblox Studio": {
+    "Korone Studio": {
       "args": [
         "--stdio"
       ],
@@ -53,15 +51,13 @@ To set up manually add following to your MCP Client config:
 }
 ```
 
-On macOS the path would be something like `"/Applications/RobloxStudioMCP.app/Contents/MacOS/rbx-studio-mcp"` if you move the app to the Applications directory.
-
 ### Build from source
 
 To build and install the MCP reference implementation from this repository's source code:
 
-1. Ensure you have [Roblox Studio](https://create.roblox.com/docs/en-us/studio/setup) and
+1. Ensure you have [Korone Studio](https://www.pekora.zip/download) and
    [Claude Desktop](https://claude.ai/download) installed and started at least once.
-1. Exit Claude and Roblox Studio if they are running.
+1. Exit Claude and Korone Studio if they are running.
 1. [Install](https://www.rust-lang.org/tools/install) Rust.
 1. Download or clone this repository.
 1. Run the following command from the root of this repository.
@@ -80,15 +76,15 @@ Claude Desktop.
 
 To make sure everything is set up correctly, follow these steps:
 
-1. In Roblox Studio, click on the **Plugins** tab and verify that the MCP plugin appears. Clicking on
+1. In Korone Studio, click on the **Plugins** tab and verify that the MCP plugin appears. Clicking on
    the icon toggles the MCP communication with Claude Desktop on and off, which you can verify in
-   the Roblox Studio console output.
+   the Korone Studio console output.
 1. In the console, verify that `The MCP Studio plugin is ready for prompts.` appears in the output.
    Clicking on the plugin's icon toggles MCP communication with Claude Desktop on and off,
    which you can also verify in the console output.
 1. Verify that Claude Desktop is correctly configured by clicking on the hammer icon for MCP tools
    beneath the text field where you enter prompts. This should open a window with the list of
-   available Roblox Studio tools (`insert_model` and `run_code`).
+   available Korone Studio tools (`insert_model` and `run_code`).
 
 **Note**: You can fix common issues with setup by restarting Studio and Claude Desktop. Claude
 sometimes is hidden in the system tray, so ensure you've exited it completely.
