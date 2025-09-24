@@ -24,11 +24,19 @@ end
 
 local function fetchBuiltinTools()
 	local tools = {}
-	for _, tool in Main.Tools:GetChildren() do
-		if tool:IsA("ModuleScript") then
-			table.insert(tools, require(tool) :: Types.ToolFunction)
+	
+	local srcFolder = Main:FindFirstChild("src")
+	if srcFolder then
+		local toolsFolder = srcFolder:FindFirstChild("Tools")
+		if toolsFolder then
+			for _, tool in toolsFolder:GetChildren() do
+				if tool:IsA("ModuleScript") then
+					table.insert(tools, require(tool))
+				end
+			end
 		end
 	end
+	
 	return tools
 end
 
@@ -39,11 +47,11 @@ local function connectWebSocket()
 	client:SetReceiveEndpoint(RECEIVE_ENDPOINT)
 	client:SetSendEndpoint(SEND_ENDPOINT)
 
-	client.Opened:Once(function()
+	client.Opened:Connect(function()
 		log("[MCP] Connection opened")
 	end)
 
-	client.Closed:Once(function()
+	client.Closed:Connect(function()
 		log("[MCP] Connection closed")
 	end)
 
@@ -53,9 +61,9 @@ local function connectWebSocket()
 		local body = HttpService:JSONDecode(message)
 		assert(body and body.id and body.args, "Invalid message received")
 
-		local id: string = body.id
+		local id = body.id
 		local responseSent = false
-		local function sendResponseOnce(response: string)
+		local function sendResponseOnce(response)
 			if not responseSent then
 				log("[MCP] Sending response:" .. response)
 				responseSent = true
@@ -66,7 +74,7 @@ local function connectWebSocket()
 			end
 		end
 
-		local args: Types.ToolArgs = body.args
+		local args = body.args
 		local recording = ChangeHistoryService:TryBeginRecording("StudioMCP")
 
 		for _, tool in tools do
@@ -97,7 +105,7 @@ local function getButtonImage()
 	return ok and response or "rbxasset://textures/ui/GuiImagePlaceholder.png"
 end
 
-local currentClient: MockWebSocketService.MockWebSocketClient? = connectWebSocket() -- nil for default off
+local currentClient = connectWebSocket() -- nil for default off
 print("The MCP Studio plugin is ready for prompts.")
 
 local toolbar = plugin:CreateToolbar("MCP")

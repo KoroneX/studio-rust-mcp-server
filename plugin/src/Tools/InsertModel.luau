@@ -39,16 +39,16 @@ type GetFreeModelsResponse = {
 	},
 }
 
-local function toTitleCase(str: string): string
-	local function titleCase(first: string, rest: string)
+local function toTitleCase(str)
+	local function titleCase(first, rest)
 		return first:upper() .. rest:lower()
 	end
 
-	local intermediate = string.gsub(str, "(%a)([%w_']*)", titleCase :: (string) -> string)
+	local intermediate = string.gsub(str, "(%a)([%w_']*)", titleCase)
 	return intermediate:gsub("%s+", "")
 end
 
-local function collapseObjectsIntoContainer(objects: { Instance }): Instance?
+local function collapseObjectsIntoContainer(objects)
 	local isPhysical = false
 	for _, object in objects do
 		if object:IsA("PVInstance") then
@@ -76,12 +76,12 @@ local function collapseObjectsIntoContainer(objects: { Instance }): Instance?
 	return objects[1]
 end
 
-local function loadAsset(assetId: number): Instance?
+local function loadAsset(assetId)
 	local objects = game:GetObjects("rbxassetid://" .. assetId)
 	return collapseObjectsIntoContainer(objects)
 end
 
-local function getAssets(query: string): number?
+local function getAssets(query)
 	local results: GetFreeModelsResponse = InsertService:GetFreeModels(query, 0)
 	local assets = {}
 	for i, result in results[1].Results do
@@ -94,7 +94,7 @@ local function getAssets(query: string): number?
 	return table.remove(assets, 1)
 end
 
-local function insertFromMarketplace(query: string): string
+local function insertFromMarketplace(query)
 	local primaryResult = getAssets(query)
 	if not primaryResult then
 		error("Failed to find asset")
@@ -122,12 +122,12 @@ local function insertFromMarketplace(query: string): string
 	return name
 end
 
-local function handleInsertModel(args: Types.ToolArgs): string?
+local function handleInsertModel(args)
 	if not args["InsertModel"] then
 		return nil
 	end
 
-	local insertModelArgs: Types.InsertModelArgs = args["InsertModel"]
+	local insertModelArgs = args["InsertModel"]
 	if type(insertModelArgs.query) ~= "string" then
 		error("Missing query in InsertModel")
 	end
@@ -135,4 +135,4 @@ local function handleInsertModel(args: Types.ToolArgs): string?
 	return insertFromMarketplace(insertModelArgs.query)
 end
 
-return handleInsertModel :: Types.ToolFunction
+return handleInsertModel

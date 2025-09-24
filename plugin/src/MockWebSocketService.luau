@@ -17,36 +17,16 @@ local CloseableStates = {
 
 local POLL_WAIT_TIME = 1
 
-export type MockWebSocketClient = {
-	Send: (self: MockWebSocketClient, data: any) -> (),
-	Close: (self: MockWebSocketClient) -> (),
-	SetReceiveEndpoint: (self: MockWebSocketClient, endpoint: string) -> (),
-	SetSendEndpoint: (self: MockWebSocketClient, endpoint: string) -> (),
-	Opened: RBXScriptSignal,
-	Closed: RBXScriptSignal,
-	MessageReceived: RBXScriptSignal,
-	ConnectionState: typeof(EnumWebSocketState.Connecting),
-}
+-- Type definitions removed for 2021 compatibility
 
-type MockWebSocketClientPrivate = MockWebSocketClient & {
-	new: (uri: string) -> MockWebSocketClient,
-	_OpenImpl: (self: MockWebSocketClient) -> (),
-	_uri: string,
-	_receiveEndpoint: string,
-	_sendEndpoint: string,
-	_pollTask: thread?,
-	_OpenedEvent: BindableEvent,
-	_ClosedEvent: BindableEvent,
-	_MessageReceivedEvent: BindableEvent,
-}
-
-function MockWebSocketClient.new(uri: string): MockWebSocketClient
-	local self: MockWebSocketClientPrivate = setmetatable({}, MockWebSocketClient) :: any
+function MockWebSocketClient.new(uri)
+	local self = setmetatable({}, MockWebSocketClient)
 
 	self._uri = uri
 	self._receiveEndpoint = ""
 	self._sendEndpoint = ""
-	self._pollTask = nil :: thread?
+	self._pollTask = nil
+	self._shouldStop = false
 
 	self._OpenedEvent = Instance.new("BindableEvent")
 	self.Opened = self._OpenedEvent.Event
@@ -59,12 +39,12 @@ function MockWebSocketClient.new(uri: string): MockWebSocketClient
 
 	self.ConnectionState = EnumWebSocketState.Connecting
 
-	task.defer(self._OpenImpl, self)
+	delay(0, function() self:_OpenImpl() end)
 
 	return self
 end
 
-local function doRequest(url: string, method: "GET" | "POST", body: any)
+local function doRequest(url, method, body)
 	local ok, response = pcall(function()
 		return HttpService:RequestAsync({
 			Url = url,
@@ -72,44 +52,45 @@ local function doRequest(url: string, method: "GET" | "POST", body: any)
 			Headers = {
 				["Content-Type"] = "application/json",
 			},
-			Body = if body then HttpService:JSONEncode(body) else nil,
-			Compress = Enum.HttpCompression.None,
+			Body = body and HttpService:JSONEncode(body) or nil,
+			-- Compress removed for 2021 compatibility
 		})
 	end)
 
-	return if ok and response.Success then response else nil
+	return (ok and response.Success) and response or nil
 end
 
-function MockWebSocketClient._OpenImpl(self: MockWebSocketClientPrivate)
+function MockWebSocketClient:_OpenImpl()
 	assert(self.ConnectionState == EnumWebSocketState.Connecting, "WebSocket is not in the Connecting state")
 
 	self.ConnectionState = EnumWebSocketState.Open
 	self._OpenedEvent:Fire()
 
-	self._pollTask = task.spawn(function()
-		while self.ConnectionState == EnumWebSocketState.Open do
+	self._pollTask = spawn(function()
+		while self.ConnectionState == EnumWebSocketState.Open and not self._shouldStop do
 			local response = doRequest(self._uri .. self._receiveEndpoint, "GET")
 
 			if response and response.Body then
 				self._MessageReceivedEvent:Fire(response.Body)
 			end
 
-			task.wait(POLL_WAIT_TIME)
+			wait(POLL_WAIT_TIME)
 		end
 	end)
 end
 
-function MockWebSocketClient.Send(self: MockWebSocketClientPrivate, data: any)
+function MockWebSocketClient:Send(data)
 	doRequest(self._uri .. self._sendEndpoint, "POST", data)
 end
 
-function MockWebSocketClient.Close(self: MockWebSocketClientPrivate)
+function MockWebSocketClient:Close()
 	if CloseableStates[self.ConnectionState] then
 		self.ConnectionState = EnumWebSocketState.Closing
 
 		if self._pollTask and coroutine.status(self._pollTask) == "running" then
-			task.cancel(self._pollTask)
-			self._pollTask = nil :: any
+			-- task.cancel is not available for 2021, using flag instead
+			self._shouldStop = true
+			self._pollTask = nil
 		end
 
 		self.ConnectionState = EnumWebSocketState.Closed
@@ -118,11 +99,11 @@ function MockWebSocketClient.Close(self: MockWebSocketClientPrivate)
 end
 
 -- START DEVIATION: These methods are not present in the real WebSocketClient instance
-function MockWebSocketClient.SetReceiveEndpoint(self: MockWebSocketClientPrivate, endpoint: string)
+function MockWebSocketClient:SetReceiveEndpoint(endpoint)
 	self._receiveEndpoint = endpoint
 end
 
-function MockWebSocketClient.SetSendEndpoint(self: MockWebSocketClientPrivate, endpoint: string)
+function MockWebSocketClient:SetSendEndpoint(endpoint)
 	self._sendEndpoint = endpoint
 end
 -- END DEVIATION
@@ -130,11 +111,7 @@ end
 local MockWebSocketService = {}
 MockWebSocketService.__index = MockWebSocketService
 
-type MockWebSocketService = {
-	CreateClient: (self: MockWebSocketService, uri: string) -> MockWebSocketClient,
-}
-
-function MockWebSocketService.CreateClient(_: MockWebSocketService, uri: string)
+function MockWebSocketService:CreateClient(uri)
 	return MockWebSocketClient.new(uri)
 end
 

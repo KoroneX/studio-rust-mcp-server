@@ -1,13 +1,8 @@
-export type InsertModelArgs = {
-	query: string,
-}
+-- Types are removed for 2021 compatibility
 
-export type RunCodeArgs = {
-	command: string,
-}
-
-export type ToolArgs = { InsertModel: InsertModelArgs } | { RunCode: RunCodeArgs }
-
-export type ToolFunction = (ToolArgs) -> string?
+-- InsertModelArgs = { query: string }
+-- RunCodeArgs = { command: string }
+-- ToolArgs = { InsertModel: InsertModelArgs } | { RunCode: RunCodeArgs }
+-- ToolFunction = (ToolArgs) -> string?
 
 return {}

@@ -3,7 +3,7 @@ local Types = require(Main.Types)
 
 local HttpService = game:GetService("HttpService")
 
-local function runCodeWithOutput(command: string): string
+local function runCodeWithOutput(command)
 	local output = ""
 
 	local function getTableType(arg)
@@ -22,14 +22,18 @@ local function runCodeWithOutput(command: string): string
 		return hasArray, hasTable
 	end
 
-	local function serializeTable(arg): any
+	local function serializeTable(arg)
 		if typeof(arg) == "table" then
 			local _, isTable = getTableType(arg)
 
 			local newArg = {}
 			for key, value in arg do
 				local newKey = serializeTable(key)
-				newArg[if isTable then tostring(newKey) else newKey] = serializeTable(value)
+				if isTable then
+					newArg[tostring(newKey)] = serializeTable(value)
+				else
+					newArg[newKey] = serializeTable(value)
+				end
 			end
 			return newArg
 		elseif type(arg) == "userdata" then
@@ -62,25 +66,27 @@ local function runCodeWithOutput(command: string): string
 		return clone
 	end
 
-	local function toStrTable(t: { any }): { string }
+	local function toStrTable(t)
 		local clonedTable = deepClone(t, {})
 		local strTable = table.create(#clonedTable)
 		for i, arg in clonedTable do
 			local serializedArg = serializeTable(arg)
-			strTable[i] = if typeof(serializedArg) == "table"
-				then HttpService:JSONEncode(serializedArg)
-				else serializedArg
+		if typeof(serializedArg) == "table" then
+			strTable[i] = HttpService:JSONEncode(serializedArg)
+		else
+			strTable[i] = serializedArg
+		end
 		end
 		return strTable
 	end
 
-	local function addToOutput(header: string, ...)
+	local function addToOutput(header, ...)
 		local strResults = toStrTable(table.pack(...))
 		output ..= header .. " " .. table.concat(strResults, "\t") .. "\n"
 	end
 
 	local function executeCode()
-		local chunk = loadstring(command) :: any
+		local chunk = loadstring(command)
 		local chunkfenv = getfenv(chunk)
 
 		local oldPrint = print
@@ -117,12 +123,12 @@ local function runCodeWithOutput(command: string): string
 	return output
 end
 
-local function handleRunCode(args: Types.ToolArgs): string?
+local function handleRunCode(args)
 	if not args["RunCode"] then
 		return nil
 	end
 
-	local runCodeArgs: Types.RunCodeArgs = args["RunCode"]
+	local runCodeArgs = args["RunCode"]
 	if type(runCodeArgs.command) ~= "string" then
 		error("Missing command in RunCode")
 	end
@@ -130,4 +136,4 @@ local function handleRunCode(args: Types.ToolArgs): string?
 	return runCodeWithOutput(runCodeArgs.command)
 end
 
-return handleRunCode :: Types.ToolFunction
+return handleRunCode
