@@ -36,52 +36,38 @@ local function runCodeWithOutput(command)
 				end
 			end
 			return newArg
+		elseif type(arg) == "function" then
+			return "[FUNCTION: " .. tostring(arg) .. "]"
 		elseif type(arg) == "userdata" then
 			return tostring(arg) or "UNABLE_TO_SERIALIZE"
 		end
 		return arg
 	end
 
-	local function deepClone(t, cache)
-		local clone = {}
-		for key, value in t do
-			local newKey = key
-			if typeof(key) == "table" then
-				if not cache[key] then
-					cache[key] = deepClone(key, cache)
-				end
-				newKey = cache[key]
-			end
-
-			local newValue = value
-			if typeof(value) == "table" then
-				if not cache[value] then
-					cache[value] = deepClone(value, cache)
-				end
-				newValue = cache[value]
-			end
-
-			clone[newKey] = newValue
-		end
-		return clone
-	end
-
 	local function toStrTable(t)
-		local clonedTable = deepClone(t, {})
-		local strTable = table.create(#clonedTable)
-		for i, arg in clonedTable do
+		local strTable = {}
+		for i, arg in ipairs(t) do
 			local serializedArg = serializeTable(arg)
-		if typeof(serializedArg) == "table" then
-			strTable[i] = HttpService:JSONEncode(serializedArg)
-		else
-			strTable[i] = serializedArg
-		end
+			if typeof(serializedArg) == "table" then
+				strTable[i] = HttpService:JSONEncode(serializedArg)
+			else
+				strTable[i] = tostring(serializedArg)
+			end
 		end
 		return strTable
 	end
 
 	local function addToOutput(header, ...)
-		local strResults = toStrTable(table.pack(...))
+		local packed = table.pack(...)
+		local strResults = {}
+		for i = 1, packed.n do
+			local serializedArg = serializeTable(packed[i])
+			if typeof(serializedArg) == "table" then
+				table.insert(strResults, HttpService:JSONEncode(serializedArg))
+			else
+				table.insert(strResults, tostring(serializedArg))
+			end
+		end
 		output ..= header .. " " .. table.concat(strResults, "\t") .. "\n"
 	end
 

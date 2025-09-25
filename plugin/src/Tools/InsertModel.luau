@@ -10,34 +10,18 @@ local function getInsertPosition()
 	local unitRay = camera:ViewportPointToRay(viewportPoint.X, viewportPoint.Y, 0)
 
 	local ray = Ray.new(unitRay.Origin, unitRay.Direction * INSERT_MAX_SEARCH_DEPTH)
-	local params = RaycastParams.new()
-	params.BruteForceAllSlow = true
 
-	local result = workspace:Raycast(ray.Origin, ray.Direction, params)
+	-- use FindPartOnRay instead of Raycast in 2021
+	local result = workspace:FindPartOnRay(ray, nil, false, false)
 
 	if result then
-		return result.Position
+		return result[1].Position
 	else
 		return camera.CFrame.Position + unitRay.Direction * INSERT_MAX_DISTANCE_AWAY
 	end
 end
 
 local InsertService = game:GetService("InsertService")
-
-type GetFreeModelsResponse = {
-	[number]: {
-		CurrentStartIndex: number,
-		TotalCount: number,
-		Results: {
-			[number]: {
-				Name: string,
-				AssetId: number,
-				AssetVersionId: number,
-				CreatorName: string,
-			},
-		},
-	},
-}
 
 local function toTitleCase(str)
 	local function titleCase(first, rest)

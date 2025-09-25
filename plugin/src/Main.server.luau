@@ -2,7 +2,6 @@ local Main = script:FindFirstAncestor("MCPStudioPlugin")
 local MockWebSocketService = require(Main.MockWebSocketService)
 local Types = require(Main.Types)
 
-local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local StudioService = game:GetService("StudioService")
@@ -15,28 +14,48 @@ if RunService:IsRunning() then
 	return
 end
 
+-- set debug flag
+local DEBUG_MODE = false
+
 local old_warn = warn
 local function log(...)
-	if false then
+	if DEBUG_MODE then
 		old_warn(...)
 	end
 end
 
 local function fetchBuiltinTools()
 	local tools = {}
-	
-	local srcFolder = Main:FindFirstChild("src")
-	if srcFolder then
-		local toolsFolder = srcFolder:FindFirstChild("Tools")
-		if toolsFolder then
-			for _, tool in toolsFolder:GetChildren() do
-				if tool:IsA("ModuleScript") then
-					table.insert(tools, require(tool))
-				end
-			end
+
+	local scriptParent = script.Parent
+	if not scriptParent then
+		log("Warning: Could not find script parent.")
+		return tools
+	end
+
+	local toolsFolder = scriptParent:FindFirstChild("Tools")
+	if toolsFolder then
+		log("Tools folder found.")
+
+		local runCodeTool = toolsFolder:FindFirstChild("RunCode")
+		local insertModelTool = toolsFolder:FindFirstChild("InsertModel")
+
+		if runCodeTool and runCodeTool:IsA("ModuleScript") then
+			table.insert(tools, require(runCodeTool))
+			log("Loaded RunCode tool.")
+		else
+			log("Warning: RunCode tool not found.")
+		end
+
+		if insertModelTool and insertModelTool:IsA("ModuleScript") then
+			table.insert(tools, require(insertModelTool))
+			log("Loaded InsertModel tool.")
+		else
+			log("Warning: InsertModel tool not found.")
 		end
 	end
-	
+
+	log("Tools loaded: " .. #tools)
 	return tools
 end
 
@@ -75,20 +94,19 @@ local function connectWebSocket()
 		end
 
 		local args = body.args
-		local recording = ChangeHistoryService:TryBeginRecording("StudioMCP")
 
-		for _, tool in tools do
-			local success, response = pcall(tool, args)
+		for i, tool in ipairs(tools) do
+			if typeof(tool) == "function" then
+				local success, response = pcall(tool, args)
 
-			if success and response then
-				sendResponseOnce(response)
-			elseif not success then
-				sendResponseOnce("Error handling request: " .. tostring(response))
+				if success and response then
+					sendResponseOnce(response)
+				elseif not success then
+					sendResponseOnce("Error handling request: " .. tostring(response))
+				end
+			else
+				log("Tool " .. i .. " is not a function, skipping")
 			end
-		end
-
-		if recording then
-			ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Commit)
 		end
 
 		sendResponseOnce("No tool found to handle request")
